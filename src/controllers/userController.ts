@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { createUserService, fundUserService, withdrawFundsService, transferFundsService } from '../services/userService';
+import { createUserService, fundUserService, withdrawFundsService, transferFundsService, findAllUsersService } from '../services/userService';
 
 export const createUser = async (req: Request, res: Response) => {
     try {
@@ -15,10 +15,23 @@ export const createUser = async (req: Request, res: Response) => {
       }
     }
 };
+
+
+export const getAllUsers = async (req: Request, res: Response) => {
+  try {
+    const users = await findAllUsersService(); // Fetch all users
+    res.status(200).json(users); // Send users as the response
+  } catch (error) {
+    res.status(500).json({ error: 'Unable to fetch users' });
+  }
+};
+
+
   
 export const fundUser = async (req: Request, res: Response) => {
     try {
       const { userId, amount } = req.body;
+
       await fundUserService(userId, amount);
       res.status(200).json({ message: 'Account funded successfully' });
     } catch (error) {
