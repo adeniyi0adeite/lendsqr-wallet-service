@@ -15,3 +15,8 @@ export const updateUserBalance = async (userId: number, balance: number) => {
 export const getUserById = async (id: number) => {
   return knex('users').where({ id }).first();
 };
+
+
+export const findAllUsers = async () => {
+  return knex('users'); // This fetches all users from the users table
+};

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { findUserByEmail, createUser, updateUserBalance, getUserById } from '../models/userModel';
+import { findUserByEmail, createUser, updateUserBalance, getUserById, findAllUsers } from '../models/userModel';
 
 
 // Mock list of blacklisted users
@@ -27,9 +27,26 @@ export const createUserService = async (name: string, email: string, balance: nu
   await createUser(name, email, balance);
 };
 
+
+
+export const findAllUsersService = async () => {
+  try {
+    const users = await findAllUsers(); // Fetch all users from the database
+    return users;
+  } catch (error) {
+    throw new Error('Failed to fetch users');
+  }
+};
+
+
+
+
 export const fundUserService = async (userId: number, amount: number) => {
   const user = await getUserById(userId);
   if (!user) throw new Error('User not found');
+
+  // Ensure the amount is a positive number
+  if (amount <= 0) throw new Error('Amount must be greater than zero');
 
   const newBalance = parseFloat(user.balance) + amount;
   await updateUserBalance(userId, newBalance);
@@ -54,3 +71,5 @@ export const transferFundsService = async (senderId: number, recipientId: number
   await updateUserBalance(senderId, sender.balance - amount);
   await updateUserBalance(recipientId, recipient.balance + amount);
 };
+
+
