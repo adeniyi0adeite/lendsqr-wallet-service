@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { createUserService, fundUserService, withdrawFundsService, transferFundsService, findAllUsersService } from '../services/userService';
+import { createUserService, fundUserService, withdrawFundsService, transferFundsService, findAllUsersService, deleteUserService } from '../services/userService';
 
-export const createUser = async (req: Request, res: Response) => {
+export const createUser = async (req: Request, res: Response): Promise<void> => {
     try {
       const { name, email, balance } = req.body;
       await createUserService(name, email, balance);
@@ -17,7 +17,21 @@ export const createUser = async (req: Request, res: Response) => {
 };
 
 
-export const getAllUsers = async (req: Request, res: Response) => {
+export const deleteUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+      const { id } = req.params;
+      await deleteUserService(parseInt(id));
+      res.status(200).json({ message: 'User deleted successfully' });
+  } catch (error) {
+      if (error instanceof Error) {
+          res.status(400).json({ error: error.message });
+      } else {
+          res.status(400).json({ error: 'An unknown error occurred' });
+      }
+  }
+};
+
+export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
   try {
     const users = await findAllUsersService(); // Fetch all users
     res.status(200).json(users); // Send users as the response
@@ -27,8 +41,9 @@ export const getAllUsers = async (req: Request, res: Response) => {
 };
 
 
+
   
-export const fundUser = async (req: Request, res: Response) => {
+export const fundUser = async (req: Request, res: Response): Promise<void> => {
     try {
       const { userId, amount } = req.body;
 
@@ -43,7 +58,7 @@ export const fundUser = async (req: Request, res: Response) => {
     }
 };
   
-export const withdrawFunds = async (req: Request, res: Response) => {
+export const withdrawFunds = async (req: Request, res: Response): Promise<void> => {
     try {
       const { userId, amount } = req.body;
       await withdrawFundsService(userId, amount);
@@ -57,7 +72,7 @@ export const withdrawFunds = async (req: Request, res: Response) => {
     }
 };
   
-export const transferFunds = async (req: Request, res: Response) => {
+export const transferFunds = async (req: Request, res: Response): Promise<void> => {
     try {
       const { senderId, recipientId, amount } = req.body;
       await transferFundsService(senderId, recipientId, amount);

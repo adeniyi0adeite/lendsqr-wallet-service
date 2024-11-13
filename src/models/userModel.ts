@@ -9,7 +9,23 @@ export const createUser = async (name: string, email: string, balance: number) =
 };
 
 export const updateUserBalance = async (userId: number, balance: number) => {
-  return knex('users').where({ id: userId }).update({ balance });
+  // Ensure the balance is a non-negative number
+  if (balance < 0) {
+    throw new Error('Balance cannot be negative');
+  }
+
+  // Update the user's balance
+  const updatedRows = await knex('users')
+    .where({ id: userId })
+    .update({ balance }, ['id', 'name', 'email', 'balance']); // Return updated user details
+
+  // Check if the update was successful (at least one row updated)
+  if (updatedRows.length === 0) {
+    throw new Error('User not found or update failed');
+  }
+
+  // Return the updated user details
+  return updatedRows[0];
 };
 
 export const getUserById = async (id: number) => {

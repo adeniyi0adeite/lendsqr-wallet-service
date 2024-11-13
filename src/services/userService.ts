@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { findUserByEmail, createUser, updateUserBalance, getUserById, findAllUsers } from '../models/userModel';
+import knex from '../db/knexfile'; // Import knex to handle the transaction
+import { findUserByEmail, createUser, updateUserBalance, getUserById, findAllUsers, } from '../models/userModel';
 
 
 // Mock list of blacklisted users
@@ -25,6 +26,17 @@ export const createUserService = async (name: string, email: string, balance: nu
 
   // Create new user
   await createUser(name, email, balance);
+};
+
+
+
+export const deleteUserService = async (userId: number) => {
+  const user = await knex('users').where({ id: userId }).first();
+  if (!user) {
+      throw new Error('User not found');
+  }
+
+  await knex('users').where({ id: userId }).del();
 };
 
 
@@ -61,15 +73,47 @@ export const withdrawFundsService = async (userId: number, amount: number) => {
   await updateUserBalance(userId, newBalance);
 };
 
+
 export const transferFundsService = async (senderId: number, recipientId: number, amount: number) => {
-  const sender = await getUserById(senderId);
-  const recipient = await getUserById(recipientId);
+  // Ensure the transfer amount is positive
+  if (amount <= 0) throw new Error('Transfer amount must be greater than zero');
+  
+  // Ensure the sender and recipient are not the same user
+  if (senderId === recipientId) {
+    throw new Error('Sender and recipient cannot be the same user');
+  }
 
-  if (!sender || !recipient) throw new Error('Sender or recipient not found');
-  if (sender.balance < amount) throw new Error('Insufficient funds');
+  // Start a transaction to ensure atomicity
+  return knex.transaction(async trx => {
+    const sender = await knex('users').where({ id: senderId }).first().transacting(trx);
+    const recipient = await knex('users').where({ id: recipientId }).first().transacting(trx);
 
-  await updateUserBalance(senderId, sender.balance - amount);
-  await updateUserBalance(recipientId, recipient.balance + amount);
+    if (!sender) throw new Error('Sender not found');
+    if (!recipient) throw new Error('Recipient not found');
+
+    // Check if the sender has enough balance
+    if (parseFloat(sender.balance) < amount) {
+      throw new Error('Insufficient funds');
+    }
+
+    // Update sender's balance
+    const newSenderBalance = parseFloat(sender.balance) - amount;
+    await knex('users').where({ id: senderId }).update({ balance: newSenderBalance }).transacting(trx);
+
+    // Update recipient's balance
+    const newRecipientBalance = parseFloat(recipient.balance) + amount;
+    await knex('users').where({ id: recipientId }).update({ balance: newRecipientBalance }).transacting(trx);
+
+    // Commit the transaction and return updated balances
+    return {
+      sender: {
+        id: senderId,
+        balance: newSenderBalance,
+      },
+      recipient: {
+        id: recipientId,
+        balance: newRecipientBalance,
+      },
+    };
+  });
 };
-
-
