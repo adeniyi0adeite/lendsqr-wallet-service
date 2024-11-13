@@ -1,5 +1,5 @@
 import express from 'express';
-import { createUser, fundUser, withdrawFunds, transferFunds, getAllUsers } from '../controllers/userController';
+import { createUser, fundUser, withdrawFunds, transferFunds, getAllUsers, deleteUser } from '../controllers/userController';
 
 const router = express.Router();
 
@@ -8,8 +8,7 @@ router.post('/fund', fundUser);
 router.post('/withdraw', withdrawFunds);
 router.post('/transfer', transferFunds);
 
-
-// GET route to retrieve all users
-router.get('/', getAllUsers); // This will handle the GET request to /api/users/
+router.get('/', getAllUsers);
+router.delete('/delete/:id', deleteUser);  // DELETE route to delete a user by ID
 
 export default router;
